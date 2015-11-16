@@ -44,22 +44,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 		mReceiver = new LocationReceiver(new Handler());
 	    mReceiver.setReceiver(this);
-
-	    final Intent intent = new Intent(Intent.ACTION_SYNC, null, this, LocationCollector.class);
-	    intent.putExtra("command", "construct");
-	    startService(intent);
-
 //        markerSequence = 0;
-    }
 
+        final Intent intent = new Intent(Intent.ACTION_SYNC, null, this, LocationCollector.class);
+	    intent.setAction("construct");
+        intent.putExtra("receiver", mReceiver);
+        startService(intent);
+
+    }
 
     @Override
     protected void onStart() {
-        super.onStart();
+	    Log.d(TAG, "[onStart] onStarting...");
 
-	    final Intent intent = new Intent(Intent.ACTION_SYNC, null, this, LocationCollector.class);
-	    intent.putExtra("command", "onstart");
-	    //startService(intent);
+	    super.onStart();
+
+	    final Intent intent = new Intent();
+	    intent.setAction("onStart");
+	    sendBroadcast(intent);
     }
 
     @Override
@@ -150,7 +152,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	@Override
 	public void onReceiveResult(int resultCode, Bundle resultData) {
 		switch (resultCode) {
-			//case
+            case LocationCollector.RESULT_LOCATION:
+                Location location = resultData.getParcelable("location");
+                setLocationOnMap(location);
+                break;
+            default:
+                break;
 		}
 	}
 }

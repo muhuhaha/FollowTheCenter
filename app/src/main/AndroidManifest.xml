@@ -53,13 +53,6 @@
         <service
             android:name=".LocationCollector"
             android:exported="false"/>
-
-        <receiver android:name=".CommandReceiver">
-            <intent-filter>
-                <action android:name="arabiannight.tistory.com.sendreciver.gogogo">
-                </action></intent-filter>
-        </receiver>
-
     </application>
 
 </manifest>

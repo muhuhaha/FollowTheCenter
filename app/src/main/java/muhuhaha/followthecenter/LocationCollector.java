@@ -1,9 +1,13 @@
 package muhuhaha.followthecenter;
 
 import android.app.IntentService;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.ResultReceiver;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,6 +31,11 @@ public class LocationCollector extends IntentService implements GoogleApiClient.
 	private static final long FASTEST_INTERVAL = 1000 * 1; // 1 sec
 	private static final long DISPLACEMENT = 10;
 	LocationRequest mLocationRequest;
+	ResultReceiver receiver = null;
+
+	public static final int RESULT_LOCATION = 0;
+	public static final int RESULT_AAA = 1;
+	public static final int RESULT_BBB = 2;
 
 	public LocationCollector() {
 		super("LocationCollector");
@@ -48,21 +57,15 @@ public class LocationCollector extends IntentService implements GoogleApiClient.
 	protected void onHandleIntent(Intent intent) {
 		Log.d(TAG, "[onHandleIntent] received!");
 
-		String command = intent.getStringExtra("command");
+		String action = intent.getAction();
+		receiver = intent.getParcelableExtra("receiver");
+		Log.d(TAG, "[onHandleIntent] "+action);
 
-		if (command.equals("construct")) {
+		if (action.equals("construct")) {
 			createLocationRequest();
 			buildGoogleApiClient();
-		}
 
-		if (command.equals("onstart")) {
 			mGoogleApiClient.connect();
-		}
-
-		if (command.equals("onstop")) {
-			if (mGoogleApiClient.isConnected()) {
-				mGoogleApiClient.disconnect();
-			}
 		}
 	}
 
@@ -72,6 +75,12 @@ public class LocationCollector extends IntentService implements GoogleApiClient.
 		mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
 		mLocationRequest.setSmallestDisplacement(DISPLACEMENT);
 		mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+	}
+
+	public void onStop() {
+		if (mGoogleApiClient.isConnected()) {
+			mGoogleApiClient.disconnect();
+		}
 	}
 
 	public void onDestroy() {
@@ -102,6 +111,9 @@ public class LocationCollector extends IntentService implements GoogleApiClient.
 
 		// location intent
 		//setLocationOnMap(location);
+		Bundle b = new Bundle();
+		b.putParcelable("location", location);
+		receiver.send(RESULT_LOCATION, b);
 	}
 
 	@Override
@@ -116,4 +128,17 @@ public class LocationCollector extends IntentService implements GoogleApiClient.
 				mGoogleApiClient, mLocationRequest, this);
 		Log.d(TAG, "[startLocationUpdates] location update started");
 	}
+
+	BroadcastReceiver mMapsBroadcastReceiver = new BroadcastReceiver(){
+		public void onReceive(Context context, Intent intent){
+			Log.d(TAG, "[onReceive] onReceiving...");
+
+			String action = intent.getAction();
+
+			if (action.equals("onStop")) {
+				onStop();
+			}
+
+		}
+	};
 }
